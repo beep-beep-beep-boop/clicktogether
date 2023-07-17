@@ -7,7 +7,7 @@ mod server;
 
 #[derive(Debug, Parser)]
 #[command(name = "clicktogether")]
-#[command(about = "About text", long_about = None)]
+#[command(about = "Click a keyboard key once all clients have clicked it.", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
