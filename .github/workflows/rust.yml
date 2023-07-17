@@ -7,6 +7,9 @@ on:
 jobs:
   release:
     name: release ${{ matrix.target }}
+    permissions:
+      contents: read
+      packages: write
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
