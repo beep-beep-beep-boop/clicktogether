@@ -8,13 +8,16 @@ pub async fn start_client(
     address: String,
     username: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    println!("connecting to server...");
+
     send_join(&address, &username).await?;
+
+    println!("connected! :3")
+    println!("press escape to exit!!");
+    println!("press space to send a click!!");
 
     enable_raw_mode()?;
 
-    println!("starting client!\r");
-    println!("press escape to exit!!\r");
-    println!("press space to send a click!!\r");
 
     let mut reader = EventStream::new();
 
