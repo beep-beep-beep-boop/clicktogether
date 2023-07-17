@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 use clap_port_flag::Port;
 use enigo::Key;
 
+mod client;
 mod server;
 
 #[derive(Debug, Parser)]
@@ -29,6 +30,9 @@ enum Commands {
     Join {
         /// the address of the server to connect to
         address: String,
+
+        /// the username to join the server with
+        username: String,
     },
 }
 
@@ -46,8 +50,8 @@ fn main() -> std::io::Result<()> {
 
             server::start_server(listener, key).expect("could not start server");
         }
-        Commands::Join { address: _ } => {
-            println!("todo")
+        Commands::Join { address, username } => {
+            client::start_client(address, username).expect("could not start client");
         }
     }
 
