@@ -36,7 +36,8 @@ enum Commands {
     },
 }
 
-fn main() -> std::io::Result<()> {
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
     let args = Cli::parse();
 
     match args.command {
@@ -48,10 +49,14 @@ fn main() -> std::io::Result<()> {
                 key => Key::Layout(key),
             };
 
-            server::start_server(listener, key).expect("could not start server");
+            server::start_server(listener, key)
+                .await
+                .expect("could not start server");
         }
         Commands::Join { address, username } => {
-            client::start_client(address, username).expect("could not start client");
+            client::start_client(address, username)
+                .await
+                .expect("could not start client");
         }
     }
 

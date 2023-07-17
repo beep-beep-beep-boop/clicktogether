@@ -3,50 +3,47 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode},
 };
 use futures::StreamExt;
-use tokio::runtime::Runtime;
 
-pub fn start_client(address: String, username: String) -> Result<(), Box<dyn std::error::Error>> {
-    let rt = Runtime::new()?;
-    //
-    // Spawn the root task
-    rt.block_on(async {
-        println!("starting client!");
-        println!("press escape to exit!!");
-        println!("press space to send a click!!");
+pub async fn start_client(
+    address: String,
+    username: String,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("starting client!");
+    println!("press escape to exit!!");
+    println!("press space to send a click!!");
 
-        send_join(&address, &username).await?;
+    send_join(&address, &username).await?;
 
-        enable_raw_mode()?;
+    enable_raw_mode()?;
 
-        let mut reader = EventStream::new();
+    let mut reader = EventStream::new();
 
-        loop {
-            let event = reader.next().await;
+    loop {
+        let event = reader.next().await;
 
-            match event {
-                Some(Ok(event)) => {
-                    if event == Event::Key(KeyCode::Char(' ').into()) {
-                        println!("sending click!\r");
-                        send_click(&address, &username).await?;
-                    }
-
-                    if event == Event::Key(KeyCode::Esc.into()) {
-                        break;
-                    }
+        match event {
+            Some(Ok(event)) => {
+                if event == Event::Key(KeyCode::Char(' ').into()) {
+                    println!("sending click!\r");
+                    send_click(&address, &username).await?;
                 }
-                Some(Err(e)) => println!("Error: {:?}\r", e),
-                None => break,
+
+                if event == Event::Key(KeyCode::Esc.into()) {
+                    break;
+                }
             }
+            Some(Err(e)) => println!("Error: {:?}\r", e),
+            None => break,
         }
+    }
 
-        disable_raw_mode()?;
+    disable_raw_mode()?;
 
-        println!("exiting...");
+    println!("exiting...");
 
-        send_leave(&address, &username).await?;
+    send_leave(&address, &username).await?;
 
-        Ok(())
-    })
+    Ok(())
 }
 
 async fn send_join(address: &String, username: &String) -> Result<(), Box<dyn std::error::Error>> {

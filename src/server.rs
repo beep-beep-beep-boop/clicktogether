@@ -3,7 +3,6 @@ use std::net::TcpListener;
 use enigo::Key;
 use std::collections::HashSet;
 use std::sync::Arc;
-use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 use tokio_stream::wrappers::TcpListenerStream;
 
@@ -138,30 +137,27 @@ mod handlers {
     }
 }
 
-pub fn start_server(listener: TcpListener, key: Key) -> Result<(), Box<dyn std::error::Error>> {
-    // Create the runtime
-    let rt = Runtime::new()?;
+pub async fn start_server(
+    listener: TcpListener,
+    key: Key,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // create the initial state
+    let state: State = Arc::new(Mutex::new(ServerState {
+        connected_users: HashSet::new(),
+        clicks: 0,
+        key,
+    }));
 
-    // Spawn the root task
-    rt.block_on(async {
-        // create the initial state
-        let state: State = Arc::new(Mutex::new(ServerState {
-            connected_users: HashSet::new(),
-            clicks: 0,
-            key,
-        }));
+    let api = filters::filters(state);
 
-        let api = filters::filters(state);
+    let listener = tokio::net::TcpListener::from_std(listener)?;
+    let addr = listener.local_addr()?;
 
-        let listener = tokio::net::TcpListener::from_std(listener)?;
-        let addr = listener.local_addr()?;
+    println!("server listening on {}", addr);
 
-        println!("server listening on {}", addr);
+    let stream = TcpListenerStream::new(listener);
 
-        let stream = TcpListenerStream::new(listener);
+    warp::serve(api).run_incoming(stream).await;
 
-        warp::serve(api).run_incoming(stream).await;
-
-        Ok(())
-    })
+    Ok(())
 }
