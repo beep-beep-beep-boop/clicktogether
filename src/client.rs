@@ -103,5 +103,9 @@ async fn send_click(address: &String, username: &String) -> Result<(), Box<dyn s
         println!("! successfully joined! try to send the click again!\r");
     }
 
+    if res.status() == StatusCode::ALREADY_REPORTED {
+        eprintln!("you already clicked!~ ><\r");
+    }
+
     Ok(())
 }
