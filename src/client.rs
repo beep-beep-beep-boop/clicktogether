@@ -2,8 +2,10 @@ use crossterm::{
     event::{Event, EventStream, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode},
 };
+use futures::future::{BoxFuture, FutureExt};
 use futures::StreamExt;
 use reqwest::StatusCode;
+use std::boxed::Box;
 
 pub async fn start_client(
     address: String,
@@ -33,7 +35,6 @@ pub async fn start_client(
         match event {
             Some(Ok(event)) => {
                 if event == Event::Key(KeyCode::Char(' ').into()) {
-                    println!("sending click!\r");
                     match send_click(&address, &username).await {
                         Ok(_) => {}
                         Err(err) => {
@@ -92,20 +93,31 @@ async fn send_leave(address: &String, username: &String) -> Result<(), Box<dyn s
     Ok(())
 }
 
-async fn send_click(address: &String, username: &String) -> Result<(), Box<dyn std::error::Error>> {
-    let url = format!("{}/click/{}", address, username);
-    let client = reqwest::Client::new();
-    let res = client.post(url).send().await?;
+fn send_click<'a>(
+    address: &'a String,
+    username: &'a String,
+) -> BoxFuture<'a, Result<(), Box<dyn std::error::Error>>> {
+    async move {
+        println!("sending click...\r");
 
-    if res.status() == StatusCode::CONFLICT {
-        eprintln!("! the server said a user with your username has not joined! joining...\r");
-        send_join(address, username).await?;
-        println!("! successfully joined! try to send the click again!\r");
+        let url = format!("{}/click/{}", address, username);
+        let client = reqwest::Client::new();
+        let res = client.post(url).send().await?;
+
+        if res.status() == StatusCode::CONFLICT {
+            //return Err(std::boxed::Box::new(UserNotJoinedError {}));
+            eprintln!("! the server said a user with your username has not joined! joining...\r");
+            send_join(address, username).await?;
+            println!("! successfully joined!\r");
+            send_click(address, username).await?;
+        } else if res.status() == StatusCode::ALREADY_REPORTED {
+            // the user already sent a click
+            eprintln!("you already clicked!~ ><\r");
+        } else {
+            println!("click sent!\r");
+        }
+
+        Ok(())
     }
-
-    if res.status() == StatusCode::ALREADY_REPORTED {
-        eprintln!("you already clicked!~ ><\r");
-    }
-
-    Ok(())
+    .boxed()
 }
