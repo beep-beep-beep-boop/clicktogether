@@ -14,7 +14,7 @@ pub struct ServerState {
 
     // clicks we have had so far. reset to 0 when it reaches the
     // number of connected users
-    clicks: u32,
+    clicks: HashSet<User>,
 
     // the key the server will click
     key: Key,
@@ -114,18 +114,23 @@ mod handlers {
         if lock.connected_users.contains(&username) {
             // do the click !
 
-            lock.clicks += 1;
-            if usize::try_from(lock.clicks).unwrap() >= lock.connected_users.len() {
-                let mut enigo = Enigo::new();
+            if lock.clicks.insert(username.clone()) {
+                if lock.clicks.len() >= lock.connected_users.len() {
+                    let mut enigo = Enigo::new();
 
-                enigo.key_click(lock.key);
+                    enigo.key_click(lock.key);
 
-                lock.clicks = 0;
+                    lock.clicks.clear();
 
-                println!("server clicking!")
+                    println!("server clicking!")
+                }
+
+                Ok(StatusCode::OK)
+            } else {
+                // that user had already submitted a click
+                println!("{} had already clicked ><", username);
+                Ok(StatusCode::ALREADY_REPORTED)
             }
-
-            Ok(StatusCode::OK)
         } else {
             // that user wasnt joined???
             eprintln!(
@@ -144,7 +149,7 @@ pub async fn start_server(
     // create the initial state
     let state: State = Arc::new(Mutex::new(ServerState {
         connected_users: HashSet::new(),
-        clicks: 0,
+        clicks: HashSet::new(),
         key,
     }));
 
