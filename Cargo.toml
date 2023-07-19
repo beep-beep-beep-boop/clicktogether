@@ -2,7 +2,7 @@
 name = "clicktogether"
 version = "0.3.0"
 edition = "2021"
-license = "AGPLv3"
+license = "AGPL-3.0"
 description = "a clicktogether server will click a specified keyboard key once all clients have clicked theirs."
 readme = "README.md"
 homepage = "https://github.com/beep-beep-beep-boop/clicktogether"
