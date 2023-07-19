@@ -24,6 +24,5 @@ tokio = { version = "1.29", features = [
 clap-port-flag = { version = "0.4.0", default-features = false }
 tokio-stream = { version = "0.1.14", features = ["net"] }
 enigo = "0.1.2"
-ctrlc = { version = "3.4.0", features = ["termination"] }
 futures = "0.3.28"
 reqwest = "0.11.18"
